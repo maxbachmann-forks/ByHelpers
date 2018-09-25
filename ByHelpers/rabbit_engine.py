@@ -470,7 +470,7 @@ def stream_monitor(signal_type, **params):
                 'type': SCRAPER_TYPE
             }
             if sm(elem):
-                return ms_id
+                return str(ms_id)
             else:
                 return False
 
@@ -492,7 +492,7 @@ def stream_monitor(signal_type, **params):
                 'br_stats': params.get('br_stats', {})
             }
             if sm(elem):
-                return ws_id
+                return str(ws_id)
             else:
                 return False
         elif signal_type.lower()=='error':
@@ -519,7 +519,7 @@ def stream_monitor(signal_type, **params):
                 'es_id': es_id
             }
             if sm(elem):
-                return es_id
+                return str(es_id)
             else:
                 return False
 
