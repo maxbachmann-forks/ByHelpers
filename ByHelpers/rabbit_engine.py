@@ -4,6 +4,7 @@ import pika
 import os
 import json
 import sys
+import uuid
 
 APP_NAME = os.getenv('APP_NAME', '__name__')
 LOG_LEVEL = os.getenv('LOG_LEVEL', 'DEBUG')
@@ -14,12 +15,11 @@ LOGGER.setLevel(LOG_LEVEL)
 pika_logger = logging.getLogger('pika')
 pika_logger.setLevel("ERROR")
 
-STREAMER_ROUTING_KEY = os.getenv('STREAMER_ROUTING_KEY', None)
+STREAMER_ROUTING_KEY = os.getenv('STREAMER_ROUTING_KEY', 'routing')
 SMONITOR_KEY = 'smonitor'
 
-if not STREAMER_ROUTING_KEY:
-    LOGGER.error("Streaming rounting key not defined!")
-    sys.exit()
+RETAILER_KEY = os.getenv('RETAILER_KEY')
+SCRAPER_TYPE = os.getenv('SCRAPER_TYPE')
 
 
 class RabbitEngine(object):
@@ -448,7 +448,89 @@ def stream_info(elem, param='id'):
         LOGGER.error("Error while streaming: {}".format(e))
         return False
 
-def s_monitor(elem):
+def stream_monitor(signal_type, **params):
+    try:
+        if signal_type.lower()=='master':
+            if SCRAPER_TYPE == 'item' or SCRAPER_TYPE == 'price':
+                required_params = ['params', 'stores']
+            elif SCRAPER_TYPE == 'store':
+                required_params = []
+            else:
+                raise Exception("SCRAPER_TYPE {} is not defined for master".format(str(SCRAPER_TYPE)))
+            for param in required_params:
+                if not params.get(param):
+                    raise Exception('{} not defined in master signal'.format(param))
+            ms_id = uuid.uuid1()
+            elem = {
+                'signal': 'master',
+                'ms_id': ms_id,
+                'retailer_key': RETAILER_KEY,
+                'params': params.get('params'),
+                'num_stores': params.get('num_stores'),
+                'type': SCRAPER_TYPE
+            }
+            if sm(elem):
+                return ms_id
+            else:
+                return False
+
+        elif signal_type.lower()=='worker':
+            required_params = ['ms_id', 'step', 'store_id']
+            for param in required_params:
+                if not params.get(param):
+                    raise Exception('{} not defined in worker signal'.format(param))
+            ws_id = uuid.uuid1()
+            elem = {
+                'signal': 'worker',
+                'type': SCRAPER_TYPE,
+                'retailer_key': RETAILER_KEY,
+                'ms_id': params.get('ms_id'),
+                'step': params.get('step'),
+                'store_id': params.get('store_id'),
+                'value': params.get('value'),
+                'ws_id': ws_id,
+                'br_stats': params.get('br_stats', {})
+            }
+            if sm(elem):
+                return ws_id
+            else:
+                return False
+        elif signal_type.lower()=='error':
+            if params.get('ws_id'):
+                required_params = ['ws_id', 'store_id', 'code', 'reason']
+                for param in required_params:
+                    if not params.get(param):
+                        raise Exception('{} not defined in error signal'.format(param))
+            elif params.get('ms_id'):
+                required_params = ['code', 'reason']
+                for param in required_params:
+                    if not params.get(param):
+                        raise Exception('{} not defined in error signal'.format(param))
+            es_id = uuid.uuid1()
+            elem = {
+                'signal': 'error',
+                'type': SCRAPER_TYPE,
+                'retailer_key': RETAILER_KEY,
+                'ws_id': params.get('ws_id'),
+                'ms_id': params.get('ms_id'),
+                'store_id': params.get('store_id'),
+                'code': params.get('code'),
+                'reason': params.get('reason'),
+                'es_id': es_id
+            }
+            if sm(elem):
+                return es_id
+            else:
+                return False
+
+        else:
+            raise Exception('Wrong signal_type')
+    except Exception as e:
+        LOGGER.error("Error parsing smonitor signal: {}".format(e))
+        return False
+
+
+def sm(elem):
     try:
         producer = RabbitEngine({
             'queue': SMONITOR_KEY,
@@ -459,5 +541,5 @@ def s_monitor(elem):
         producer.close_connection()
         return True
     except Exception as e:
-        LOGGER.error("Error streaming s_monitor: {}".format(e))
+        LOGGER.error("Error while streaming: {}".format(e))
         return False
