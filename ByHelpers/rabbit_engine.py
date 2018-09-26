@@ -549,10 +549,10 @@ def sm(elem, param='signal'):
         return False
 
 
-class Error:
+class MonitorException(Exception):
     """
     Error class with attributes code and reason
     """
     def __init__(self, code=2, reason=''):
         self.code = code
-        self.error = reason
+        self.reason = reason
