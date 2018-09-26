@@ -16,7 +16,7 @@ pika_logger = logging.getLogger('pika')
 pika_logger.setLevel("ERROR")
 
 STREAMER_ROUTING_KEY = os.getenv('STREAMER_ROUTING_KEY', 'routing')
-SMONITOR_KEY = 'smonitor'
+SMONITOR_KEY = os.getenv('SMONITOR','smonitor')
 
 RETAILER_KEY = os.getenv('RETAILER_KEY')
 SCRAPER_TYPE = os.getenv('SCRAPER_TYPE')
@@ -46,6 +46,7 @@ class RabbitEngine(object):
         self._deliveries = []
         self._acked = 0
         self._nacked = 0
+        self._message_number = 0
         self._stopping = False
         self._closing = False
         self._callback = self.on_message
@@ -62,7 +63,6 @@ class RabbitEngine(object):
         self.EXCHANGE_TYPE = config['exchange_type'] if 'exchange_type' in config.keys() else os.getenv('STREAMER_EXCHANGE_TYPE','direct')
         self.ROUTING_KEY = config['routing_key'] if 'routing_key' in config.keys() else os.getenv('STREAMER_ROUTING_KEY','')
         self.QUEUE = config['queue'] if 'queue' in config.keys() else os.getenv('STREAMER_QUEUE','')
-
 
         if not blocking:
             self._url = 'amqp://%s:%s@%s:%s/%s?connection_attempts=%s&heartbeat_interval=%s' % \
@@ -90,7 +90,7 @@ class RabbitEngine(object):
                                      self.on_connection_open,
                                      stop_ioloop_on_close=False)
 
-    def on_connection_open(self):
+    def on_connection_open(self, unused_connection):
         """This method is called by pika once the connection to RabbitMQ has
         been established. It passes the handle to the connection object in
         case we need it, but in this case, we'll just mark it unused.
@@ -202,7 +202,7 @@ class RabbitEngine(object):
                                        exchange_name,
                                        self.EXCHANGE_TYPE)
 
-    def on_exchange_declareok(self):
+    def on_exchange_declareok(self, unused_frame):
         """Invoked by pika when RabbitMQ has finished the Exchange.Declare RPC
         command.
 
@@ -223,7 +223,7 @@ class RabbitEngine(object):
         LOGGER.debug('Declaring queue %s', queue_name)
         self._channel.queue_declare(callback=self.on_queue_declareok, queue=queue_name, auto_delete=False)
 
-    def on_queue_declareok(self):
+    def on_queue_declareok(self, method_frame):
         """Method invoked by pika when the Queue.Declare RPC call made in
         setup_queue has completed. In this method we will bind the queue
         and exchange together with the routing key by issuing the Queue.Bind
@@ -238,7 +238,7 @@ class RabbitEngine(object):
         self._channel.queue_bind(self.on_bindok, self.QUEUE,
                                  self.EXCHANGE, self.ROUTING_KEY)
 
-    def on_bindok(self):
+    def on_bindok(self, unused_frame):
         """Invoked by pika when the Queue.Bind method has completed. At this
         point we will start consuming messages by calling start_consuming
         which will invoke the needed RPC commands to start the process.
@@ -270,6 +270,7 @@ class RabbitEngine(object):
         """
         LOGGER.debug('Issuing consumer related RPC commands')
         self.enable_delivery_confirmations()
+        #self.schedule_next_message()
 
     def enable_delivery_confirmations(self):
         """Send the Confirm.Select RPC method to RabbitMQ to enable delivery
@@ -306,17 +307,16 @@ class RabbitEngine(object):
         elif confirmation_type == 'nack':
             self._nacked += 1
         self._deliveries.remove(method_frame.method.delivery_tag)
-        LOGGER.debug('Published  messages, %i have yet to be confirmed, '
+        LOGGER.debug('Published %i messages, %i have yet to be confirmed, '
                     '%i were acked and %i were nacked',
-                    len(self._deliveries),
+                    self._message_number, len(self._deliveries),
                     self._acked, self._nacked)
 
-
-    def send(self, message):
+    def send(self,message):
+        self._message = message
         self.publish_message(message)
 
-
-    def publish_message(self, message):
+    def publish_message(self,message):
         if self._stopping:
             return
         properties = pika.BasicProperties(app_id="byprice",content_type='application/json', delivery_mode=2)
@@ -324,8 +324,8 @@ class RabbitEngine(object):
                                     routing_key=self.ROUTING_KEY,
                                     body=json.dumps(message, ensure_ascii=False),
                                     properties=properties)
-
-
+        self._message_number += 1
+        LOGGER.debug('Published message # %i', self._message_number)
 
     def add_on_cancel_callback(self):
         """Add a callback that will be invoked if RabbitMQ cancels the consumer
@@ -348,7 +348,7 @@ class RabbitEngine(object):
         if self._channel:
             self._channel.close()
 
-    def on_message(self, basic_deliver, properties, body):
+    def on_message(self, unused_channel, basic_deliver, properties, body):
         """Invoked by pika when a message is delivered from RabbitMQ. The
         channel is passed for your convenience. The basic_deliver object that
         is passed in carries the exchange, routing key, delivery tag and
@@ -384,7 +384,7 @@ class RabbitEngine(object):
             LOGGER.debug('Sending a Basic.Cancel RPC command to RabbitMQ')
             self._channel.basic_cancel(self.on_cancelok, self._consumer_tag)
 
-    def on_cancelok(self):
+    def on_cancelok(self, unused_frame):
         """This method is invoked by pika when RabbitMQ acknowledges the
         cancellation of a consumer. At this point we will close the channel.
         This will invoke the on_channel_closed method once the channel has been
@@ -448,29 +448,30 @@ def stream_info(elem, param='id'):
         LOGGER.error("Error while streaming: {}".format(e))
         return False
 
+
 def stream_monitor(signal_type, **params):
     try:
         if signal_type.lower()=='master':
             if SCRAPER_TYPE == 'item' or SCRAPER_TYPE == 'price':
-                required_params = ['params', 'stores']
+                required_params = ['params', 'num_stores']
             elif SCRAPER_TYPE == 'store':
                 required_params = []
             else:
                 raise Exception("SCRAPER_TYPE {} is not defined for master".format(str(SCRAPER_TYPE)))
             for param in required_params:
-                if not params.get(param):
+                if params.get(param, False) is False:
                     raise Exception('{} not defined in master signal'.format(param))
-            ms_id = uuid.uuid1()
+            ms_id = str(uuid.uuid1())
             elem = {
                 'signal': 'master',
                 'ms_id': ms_id,
                 'retailer_key': RETAILER_KEY,
                 'params': params.get('params'),
                 'num_stores': params.get('num_stores'),
-                'type': SCRAPER_TYPE
+                'type_': SCRAPER_TYPE
             }
             if sm(elem):
-                return str(ms_id)
+                return ms_id
             else:
                 return False
 
@@ -479,11 +480,9 @@ def stream_monitor(signal_type, **params):
             for param in required_params:
                 if not params.get(param):
                     raise Exception('{} not defined in worker signal'.format(param))
-            ws_id = uuid.uuid1()
+            ws_id = str(uuid.uuid1())
             elem = {
                 'signal': 'worker',
-                'type': SCRAPER_TYPE,
-                'retailer_key': RETAILER_KEY,
                 'ms_id': params.get('ms_id'),
                 'step': params.get('step'),
                 'store_id': params.get('store_id'),
@@ -492,7 +491,7 @@ def stream_monitor(signal_type, **params):
                 'br_stats': params.get('br_stats', {})
             }
             if sm(elem):
-                return str(ws_id)
+                return ws_id
             else:
                 return False
         elif signal_type.lower()=='error':
@@ -506,11 +505,9 @@ def stream_monitor(signal_type, **params):
                 for param in required_params:
                     if not params.get(param):
                         raise Exception('{} not defined in error signal'.format(param))
-            es_id = uuid.uuid1()
+            es_id = str(uuid.uuid1())
             elem = {
                 'signal': 'error',
-                'type': SCRAPER_TYPE,
-                'retailer_key': RETAILER_KEY,
                 'ws_id': params.get('ws_id'),
                 'ms_id': params.get('ms_id'),
                 'store_id': params.get('store_id'),
@@ -519,7 +516,7 @@ def stream_monitor(signal_type, **params):
                 'es_id': es_id
             }
             if sm(elem):
-                return str(es_id)
+                return es_id
             else:
                 return False
 
@@ -530,12 +527,19 @@ def stream_monitor(signal_type, **params):
         return False
 
 
-def sm(elem):
+def sm(elem, param='signal'):
+    """
+    Stream the elem to smonitor queue RabbitMQ
+    :param elem: dict
+    :param param: str
+    :return: Boolean
+    """
     try:
         producer = RabbitEngine({
             'queue': SMONITOR_KEY,
             'routing_key': SMONITOR_KEY
         }, blocking=True)
+        LOGGER.debug("sMonitor stream {}".format(elem.get(param, '')))
         producer.send(elem)
         producer.close_channel()
         producer.close_connection()
@@ -543,3 +547,12 @@ def sm(elem):
     except Exception as e:
         LOGGER.error("Error while streaming: {}".format(e))
         return False
+
+
+class Error:
+    """
+    Error class with attributes code and reason
+    """
+    def __init__(self, code=2, reason=''):
+        self.code = code
+        self.error = reason
