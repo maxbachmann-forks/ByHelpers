@@ -478,7 +478,7 @@ def stream_monitor(signal_type, **params):
         elif signal_type.lower()=='worker':
             required_params = ['ms_id', 'step', 'store_id']
             for param in required_params:
-                if not params.get(param):
+                if params.get(param, False) is False:
                     raise Exception('{} not defined in worker signal'.format(param))
             ws_id = str(uuid.uuid1())
             elem = {
@@ -498,8 +498,8 @@ def stream_monitor(signal_type, **params):
             if params.get('ws_id'):
                 required_params = ['ws_id', 'store_id', 'code', 'reason']
                 for param in required_params:
-                    if not params.get(param):
-                        raise Exception('{} not defined in error signal'.format(param))
+                    if params.get(param, False) is False:
+                        raise Exception('{} param not defined in error signal'.format(param))
             elif params.get('ms_id'):
                 required_params = ['code', 'reason']
                 for param in required_params:
