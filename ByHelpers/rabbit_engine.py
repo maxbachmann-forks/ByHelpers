@@ -470,7 +470,7 @@ def stream_monitor(signal_type, **params):
                 'num_stores': params.get('num_stores'),
                 'type_': SCRAPER_TYPE
             }
-            if sm(elem):
+            if __sm(elem):
                 return ms_id
             else:
                 return False
@@ -490,7 +490,7 @@ def stream_monitor(signal_type, **params):
                 'ws_id': ws_id,
                 'br_stats': params.get('br_stats', {})
             }
-            if sm(elem):
+            if __sm(elem):
                 return ws_id
             else:
                 return False
@@ -515,7 +515,7 @@ def stream_monitor(signal_type, **params):
                 'reason': params.get('reason'),
                 'es_id': es_id
             }
-            if sm(elem):
+            if __sm(elem):
                 return es_id
             else:
                 return False
@@ -527,7 +527,7 @@ def stream_monitor(signal_type, **params):
         return False
 
 
-def sm(elem, param='signal'):
+def __sm(elem, param='signal'):
     """
     Stream the elem to smonitor queue RabbitMQ
     :param elem: dict
