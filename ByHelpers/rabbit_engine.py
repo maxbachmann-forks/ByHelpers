@@ -18,7 +18,7 @@ pika_logger.setLevel("ERROR")
 STREAMER_ROUTING_KEY = os.getenv('STREAMER_ROUTING_KEY', 'routing')
 SMONITOR_KEY = os.getenv('SMONITOR','smonitor')
 
-if os.getenv('ENV', '').lower() == 'dev':
+if os.getenv('ENV', 'LOCAL').lower() == 'dev':
     if not '_dev' in STREAMER_ROUTING_KEY:
         STREAMER_ROUTING_KEY += '_dev'
     if not '_dev' in SMONITOR_KEY:

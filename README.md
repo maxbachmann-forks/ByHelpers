@@ -49,6 +49,7 @@ APP_NAME = os.getenv('APP_NAME', '__name__')
 LOG_LEVEL = os.getenv('LOG_LEVEL', 'DEBUG')
 STREAMER_ROUTING_KEY = os.getenv('STREAMER_ROUTING_KEY', 'routing')
 SMONITOR_KEY = os.getenv('SMONITOR','smonitor')
+ENV = os.getenv('ENV', 'LOCAL')
 
 # Required!!
 RETAILER_KEY = os.getenv('RETAILER_KEY')
