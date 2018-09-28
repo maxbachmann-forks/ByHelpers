@@ -18,6 +18,12 @@ pika_logger.setLevel("ERROR")
 STREAMER_ROUTING_KEY = os.getenv('STREAMER_ROUTING_KEY', 'routing')
 SMONITOR_KEY = os.getenv('SMONITOR','smonitor')
 
+if os.getenv('ENV', '').lower() == 'dev':
+    if not '_dev' in STREAMER_ROUTING_KEY:
+        STREAMER_ROUTING_KEY += '_dev'
+    if not '_dev' in SMONITOR_KEY:
+        SMONITOR_KEY += '_dev'
+
 RETAILER_KEY = os.getenv('RETAILER_KEY')
 SCRAPER_TYPE = os.getenv('SCRAPER_TYPE')
 
