@@ -489,6 +489,8 @@ def stream_monitor(signal_type, **params):
             ws_id = str(uuid.uuid1())
             elem = {
                 'signal': 'worker',
+                'retailer_key': RETAILER_KEY,
+                'type_': SCRAPER_TYPE,
                 'ms_id': params.get('ms_id'),
                 'step': params.get('step'),
                 'store_id': params.get('store_id'),
@@ -514,6 +516,8 @@ def stream_monitor(signal_type, **params):
             es_id = str(uuid.uuid1())
             elem = {
                 'signal': 'error',
+                'retailer_key': RETAILER_KEY,
+                'type_': SCRAPER_TYPE,
                 'ws_id': params.get('ws_id'),
                 'ms_id': params.get('ms_id'),
                 'store_id': params.get('store_id'),

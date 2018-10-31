@@ -13,7 +13,8 @@ setuptools.setup(
     download_url = 'https://github.com/ByPrice/ByHelpers/tarball/0.0.1',
     keywords = ['ByPrice'],
     install_requires=[
-        'pika==0.10.0'
+        'pika==0.10.0',
+        'fuzzywuzzy'
     ],
     classifiers=(
         "Programming Language :: Python :: 3",
