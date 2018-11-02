@@ -190,12 +190,12 @@ ATTRIBUTES_FIXED = {
             {
                 "name" : "mg",
                 "name_es" : "miligramo(s)",
-                "match" : ["miligrams","miligramos","mg","miligramo","mgs", "mc"]
+                "match" : ["miligrams","miligramos","mg","miligramo","mgs"]
             },
             {
                 "name" : "ug",
                 "name_es" : "microgramo(s)",
-                "match" : ["micrograms","ug","miligramo","mgs"]
+                "match" : ["micrograms","ug","miligramo","mcg"]
             },
             {
                 "name" : "g",
@@ -464,12 +464,12 @@ ATTRIBUTES_FIXED = {
             {
                 "name" : "mg",
                 "name_es" : "miligramo(s)",
-                "match" : ["miligrams","miligramos","mg","miligramo","mgs", "mc"]
+                "match" : ["miligrams","miligramos","mg","miligramo","mgs" ]
             },
             {
                 "name" : "ug",
                 "name_es" : "microgramo(s)",
-                "match" : ["micrograms","ug","miligramo","mgs"]
+                "match" : ["micrograms","ug","miligramo", "mcg"]
             },
             {
                 "name" : "g",
