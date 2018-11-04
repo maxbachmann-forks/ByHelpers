@@ -624,23 +624,23 @@ class Attributes:
 
     def update_attr(self, parsed_attr, is_raw=True):
         if is_raw is True:
-            name = parsed_attr.get('name', 'raw')
-            attr = self.raw_attributes.get(name, False)
+            key = parsed_attr.get('key', 'raw')
+            attr = self.raw_attributes.get(key, False)
             if attr is False:
-                self.raw_attributes[name] = parsed_attr
+                self.raw_attributes[key] = parsed_attr
             elif isinstance(attr, dict):
-                self.raw_attributes[name] = [attr, parsed_attr]
+                self.raw_attributes[key] = [attr, parsed_attr]
             elif isinstance(attr, list):
-                self.raw_attributes[name].append(parsed_attr)
+                self.raw_attributes[key].append(parsed_attr)
         else:
-            name = parsed_attr.get('name', 'raw')
-            attr = self.attributes.get(name, False)
+            key = parsed_attr.get('key', 'raw')
+            attr = self.attributes.get(key, False)
             if attr is False:
-                self.attributes[name] = parsed_attr
+                self.attributes[key] = parsed_attr
             elif isinstance(attr, dict):
-                self.attributes[name] = [attr, parsed_attr]
+                self.attributes[key] = [attr, parsed_attr]
             elif isinstance(attr, list):
-                self.attributes[name].append(parsed_attr)
+                self.attributes[key].append(parsed_attr)
 
     @staticmethod
     def get_name(text, min_score=80, trusty_score=90):

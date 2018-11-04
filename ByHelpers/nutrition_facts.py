@@ -69,7 +69,7 @@ NUTRIMENTS = [
         "name": "Vitamin E",
         "name_es": "Vitamina E",
         "key": "vite",
-        "match": ["vite", "vitamin e", 'vitamina e'],
+        "match": ["vitamin e", 'vitamina e'],
     },
     {
         "name": "Iodized Salt",
@@ -94,7 +94,7 @@ NUTRIMENTS = [
         "name": "Thiamin",
         "name_es": "Tiamina",
         "key": "tiamin",
-        "match": ["thia", "thiamin", "thiamine","tiamina", "vitb1", "vitb1", "vitamina b1", "vitamine b1"]
+        "match": ["thia", "thiamin", "thiamine","tiamina", "vitb1", "vitamina b1", "vitamine b1"]
     },
     {
         "name": "Saccharose",
@@ -106,7 +106,7 @@ NUTRIMENTS = [
         "name": "Vitamin C",
         "name_es": "Vitamina C",
         "key": "vitc",
-        "match": ["vitc", "vitc", "vitamina c", "vitamin c"],
+        "match": ["vitamina c", "vitamin c"],
     },
     {
         "name": "Erythritol",
@@ -142,13 +142,13 @@ NUTRIMENTS = [
         "name": "Vitamin A",
         "name_es": "Vitamina A",
         "key": "vita",
-        "match": ["vita", "vita", "vitamina a", "vitamin a"]
+        "match": ["vitamina a", "vitamin a"]
     },
     {
         "name": "Vitamin D",
         "name_es": "Vitamina D",
         "key": "vitd",
-        "match": ["vitd", "vitd", "vitamina d", "vitamin d"]
+        "match": ["vitamina d", "vitamin d"]
     },
     {
         "name": "Cholesterol",
@@ -204,7 +204,7 @@ NUTRIMENTS = [
         "name": "Vitamin K",
         "name_es":"Vitamina K",
         "key": "vitk",
-        "match": ["vitk",  "vitamina k", "vitamin k"]
+        "match": ["vitamina k", "vitamin k"]
     },
     {
         "name": "Fibre",
@@ -365,6 +365,7 @@ class Nutriments:
         self.raw_nutriments={}
         self.nutriments={}
         self.good_name = None
+        self.nutriment = False
 
 
     @staticmethod
@@ -379,8 +380,7 @@ class Nutriments:
 
 
     def guess_nutr(self, text):
-        name = self.get_name(text)
-        print(name)
+        name, self.nutriment = self.get_name(text)
         if name is not False:
             self.add_nutriment(text, name=name, is_raw=True)
         else:
@@ -410,10 +410,10 @@ class Nutriments:
                             self.add_nutriment(name=kargs.get('name'), qty=qty, daily=daily)
                     else:
                         for name, value in args[0].items():
-                            self.add_nutriment(name=name, guess_values=value)
+                            self.add_nutriment(name=name, values=value)
                 elif isinstance(args[0], str):
                     if kargs.get('name', False) is not False:
-                        self.add_nutriment(name=kargs.get('name'), guess_values=args[0])
+                        self.add_nutriment(name=kargs.get('name'), values=args[0])
                     else:
                        self.guess_nutr(args[0])
                 elif isinstance(args[0], list) or isinstance(args[0], tuple) or isinstance(args[0], set):
@@ -421,7 +421,7 @@ class Nutriments:
                         if isinstance(args[0], list) or isinstance(args[0], tuple):
                             for value in args[0]:
                                 if value:
-                                    self.add_nutriment(name=kargs.get('name'), guess_values=value)
+                                    self.add_nutriment(name=kargs.get('name'), values=value)
                     else:
                         for value in args[0]:
                             if value:
@@ -431,21 +431,23 @@ class Nutriments:
                     return False
         elif kargs:
             name = kargs.get('name', 'raw')
-            nutr = self.get_name(name, return_dict=True)
-            if nutr is not False:
+            values = kargs.get('values', '')
+            if self.nutriment is None or self.nutriment is False:
+                name_matched, self.nutriment = self.get_name(name)
+            if self.nutriment is not False:
                 nutr_dict = {
-                    'key': nutr.get('key'),
-                    'name': nutr.get('name_es') if self.langage == 'es' else nutr.get('name')
+                    'key': self.nutriment.get('key'),
+                    'name': self.nutriment.get('name_es') if self.langage == 'es' else self.nutriment.get('name')
                 }
                 is_raw = False
-                nutr_dict.update(self.gess_values(nutr, daily=False, unit=False, qty=False, values=False))
+                nutr_dict.update(self.gess_values(self.nutriment,  daily=kargs.get('daily'), unit=kargs.get('unit'), qty=kargs.get('qty'), values=values))
             else:
                 nutr_dict = {
-                    'key': 'raw',
-                    'name': name
+                    'key': name,
+                    'name': name + ' ' + values
                 }
                 is_raw = True
-                nutr_dict.update(self.gess_values(None, daily=False, unit=False, qty=False, values=False))
+                nutr_dict.update(self.gess_values(None,  daily=kargs.get('daily'), unit=kargs.get('unit'), qty=kargs.get('qty'), values=values))
 
 
 
@@ -462,29 +464,33 @@ class Nutriments:
 
 
     def update_nutr(self, parsed_nutr, is_raw=True):
+        key = parsed_nutr.get('key', 'raw')
+        if key not in ['calories', 'serving_quantity'] and\
+                (parsed_nutr.get('unit') is None or parsed_nutr.get('qty') is None):
+            is_raw = True
+
         if is_raw is True:
-            name = parsed_nutr.get('name', 'raw')
-            nutr = self.raw_nutriments.get(name, False)
+            nutr = self.raw_nutriments.get(key, False)
             if nutr is False:
-                self.raw_nutriments[name] = parsed_nutr
+                self.raw_nutriments[key] = parsed_nutr
             elif isinstance(nutr, dict):
-                self.raw_nutriments[name] = [nutr, parsed_nutr]
+                self.raw_nutriments[key] = [nutr, parsed_nutr]
             elif isinstance(nutr, list):
-                self.raw_nutriments[name].append(parsed_nutr)
+                self.raw_nutriments[key].append(parsed_nutr)
         else:
-            name = parsed_nutr.get('name', 'raw')
-            nutr = self.nutriments.get(name, False)
+            nutr = self.nutriments.get(key, False)
             if nutr is False:
-                self.nutriments[name] = parsed_nutr
+                self.nutriments[key] = parsed_nutr
             elif isinstance(nutr, dict):
-                self.nutriments[name] = [nutr, parsed_nutr]
+                self.nutriments[key] = [nutr, parsed_nutr]
             elif isinstance(nutr, list):
-                self.nutriments[name].append(parsed_nutr)
+                self.nutriments[key].append(parsed_nutr)
+        self.nutriment = None
 
 
     @staticmethod
-    def get_name(text, min_score=90, trusty_score=95, return_dict=False):
-        text = ''.join(x for x in unicodedata.normalize('NFKD', text) if x in string.ascii_letters or x in [" "]).lower()
+    def get_name(text, min_score=90, trusty_score=95):
+        text = ''.join(x for x in unicodedata.normalize('NFKD', text) if x in string.ascii_letters or x in [" ", '1', '2' , '6', '9']).lower()
         text.strip()
         text = re.sub(r'\s+', ' ', text)
         max_score = float('-inf')
@@ -492,28 +498,20 @@ class Nutriments:
         for nutr in NUTRIMENTS:
             choices = nutr.get("match")
             result = process.extractOne(text, choices, scorer=fuzz.WRatio, score_cutoff=min_score)
-            if result:
-                print(text, result)
             if result and result[1] > max_score:
-                print (result[1] > max_score, result[1], max_score)
                 closer_nutr = nutr.get('key')
                 closer_dict = nutr
                 closer_dict['closer_match'] = result[0]
                 max_score = result[1]
-                print ("Max: ", max_score)
                 if max_score >= trusty_score:
-                    if return_dict is True:
-                        return nutr
-                    return closer_nutr
+                    return closer_nutr, nutr
         if max_score >= min_score:
-            if return_dict is True:
-                return closer_dict
-            return closer_nutr
+            return closer_nutr, closer_dict
         else:
-            return False
+            return False, False
 
 
-    def gess_values(self, nutr, daily=False, unit=False, qty=False, values=False):
+    def gess_values(self, nutr, daily=None, unit=None, qty=None, values=None):
         guess_dict ={
             "qty": None,
             "daily": None,
@@ -546,52 +544,48 @@ class Nutriments:
                 guess_dict['unit'] = unit
 
         if values and isinstance(values, str):
-            values = ''.join(
-            x for x in unicodedata.normalize('NFKD', string) if x in string.ascii_letters or x in [" ", "%"]).lower()
+            values_txt = ''.join(
+            x for x in unicodedata.normalize('NFKD', values) if x in string.ascii_letters or x in [" ", "%"]).lower()
             if nutr is not None:
-                values = values.replace(nutr.get('closer_match'), '')
-            if unit is not None:
-                values = values.replace(unit, '')
-            else:
-                unit, closer_unit = self.get_unit(values)
-                if unit is not False:
-                    guess_dict['unit'] = unit
+                values_txt = values_txt.replace(nutr.get('closer_match'), '')
+            if unit is None:
+                unit, closer_unit = self.get_unit(values_txt)
             if qty is None:
                 qty_search = re.search(r'([\d\.]+) *{unit}'.format(unit=closer_unit), values)
                 if qty_search:
                     try:
-                        qty = float(qty_search)
+                        qty = float(qty_search.group(1))
                     except:
                         qty = None
-
-                qty_search = re.findall(r'([\d\.]+)', values)
-                if len(qty_search) == 1:
-                    if '%' not in values:
-                        try:
-                            qty = float(qty_search[0])
-                        except:
-                            qty = None
-                    else:
-                        try:
-                            daily = float(qty_search[0])
-                        except:
-                            daily = None
-                elif len(qty_search) == 2:
-                    if '%' in values:
-                        daily_search = re.search(r'([\d\.]+) *%', values)
-                        if daily_search:
+                if qty is None:
+                    qty_search = re.findall(r'([\d\.]+)', values)
+                    if len(qty_search) == 1:
+                        if '%' not in values:
                             try:
-                                daily_str = daily_search.group(1)
-                                qty = set(qty_search) - {daily_search}
-
-                                if len(qty) == 1:
-                                    try:
-                                        qty = float(qty)
-                                    except:
-                                        qty = None
-                                daily = float(daily_str)
+                                qty = float(qty_search[0])
+                            except:
+                                qty = None
+                        else:
+                            try:
+                                daily = float(qty_search[0])
                             except:
                                 daily = None
+                    elif len(qty_search) == 2:
+                        if '%' in values:
+                            daily_search = re.search(r'([\d\.]+) *%', values)
+                            if daily_search:
+                                try:
+                                    daily_str = daily_search.group(1)
+                                    qty = set(qty_search) - {daily_search}
+
+                                    if len(qty) == 1:
+                                        try:
+                                            qty = float(qty)
+                                        except:
+                                            qty = None
+                                    daily = float(daily_str)
+                                except:
+                                    daily = None
             if daily is None and '%' in values:
                 daily_search = re.findall(r'([\d\.]+)', values)
                 if len(daily_search) == 1:
@@ -617,21 +611,19 @@ class Nutriments:
         return guess_dict
 
 
-    @staticmethod
-    def get_unit(string, is_trusty=False, min_score=95, trusty_score=100):
-        if not isinstance(string, str):
+    def get_unit(self, text, is_trusty=False, min_score=95, trusty_score=100):
+        if not isinstance(text, str):
             return False
         text = ''.join(
-            x for x in unicodedata.normalize('NFKD', string) if x in string.ascii_letters or x in [" "]).lower()
+            x for x in unicodedata.normalize('NFKD', text) if x in string.ascii_letters or x in [" "]).lower()
         text.strip()
-        text = re.sub(r'[\d%]')
+        text = re.sub(r'[\d%]', '', text)
         text = re.sub(r'\s+', ' ', text)
         if is_trusty:
             trustier_text = re.search('[\d\.]+ *([\(\)a-z]+)')
             trustier_text = trustier_text.group(1) if trustier_text else False
         else:
             trustier_text = False
-
         max_score = float('-inf')
         closer_unit = False
         closer_match = False
@@ -640,10 +632,10 @@ class Nutriments:
             if trustier_text is not False:
                 result = process.extractOne(text, choices, scorer=fuzz.partial_token_set_ratio, score_cutoff=min_score)
                 if result:
-                    return unit.get('key')
+                    return unit.get('name_es') if self.langage == 'es' else unit.get('name')
             result = process.extractOne(text, choices, scorer=fuzz.partial_token_set_ratio, score_cutoff=min_score)
-            if result and result[1] > max_score:
-                closer_unit = unit.get('key')
+            if result and result[1] >= max_score:
+                closer_unit = unit.get('name_es') if self.langage == 'es' else unit.get('name')
                 closer_match = result[0]
                 max_score = result[1]
             if is_trusty is True or max_score >= trusty_score:
@@ -655,10 +647,10 @@ class Nutriments:
 
 
     @staticmethod
-    def str_to_float(string):
-        if not isinstance(string, str):
+    def str_to_float(text):
+        if not isinstance(text, str):
             return False
-        text = re.sub(r'\s+', ' ', string)
+        text = re.sub(r'\s+', ' ', text)
 
         text = re.sub(r'[^\d\.]', '', text)
         text.strip()
