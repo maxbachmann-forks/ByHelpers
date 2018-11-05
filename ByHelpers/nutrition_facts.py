@@ -10,7 +10,7 @@ import re
 NUTRIMENTS = [
     {
         "key": "calories",
-        "match": ["calories", "calorias", "cals", "calorie", "caloria", "cal", "calory", "kilocalories", "ener", "energy", "energia", 'kcal'],
+        "match": ["calories", "calorias", "calorie", "caloria", "calory", "kilocalories", "ener", "energy", "energia", 'kcal'],
         "name": "Calories",
         "name_es": "Calorias"
     },
@@ -37,7 +37,7 @@ NUTRIMENTS = [
         "name": "Total Fat",
         "name_es": "Grasas Totales",
         "key": "fat",
-        "match": ["fat", "grasa", "grasas", "acidos grasos", "grasa total", "total fat", ""],
+        "match": ["fat", "grasa", "grasas", "acidos grasos", "grasa total", "total fat"],
     },
     {
 
@@ -76,12 +76,6 @@ NUTRIMENTS = [
         "name_es": "Yodo",
         "key": "iodine",
         "match": ["iodized_salt", "yodo", 'sal iodada']
-    },
-    {
-        "name": "Sodium",
-        "name_es": "Sodio",
-        "key": "sodium",
-        "match": ["sodio", "sodium", "na"],
     },
     {
         "name": "Carnitine",
@@ -130,7 +124,7 @@ NUTRIMENTS = [
         "name": "Zinc",
         "name_es": "Zinc",
         "key": "zinc",
-        "match": ["zinc", "zn"]
+        "match": ["zinc"]
     },
     {
         "name": "Folic Acid",
@@ -166,13 +160,13 @@ NUTRIMENTS = [
         "name": "Calcium",
         "name_es": "Calcio",
         "key": "calcium",
-        "match": ["calcium", "ca", "calcio"]
+        "match": ["calcium", "calcio"]
     },
     {
         "name": "Selenium",
         "name_es": "Selenio",
         "key": "selenium",
-        "match": ["selenium", "se", "selenio"]
+        "match": ["selenium", "selenio"]
     },
     {
         "name": "Pantothenic Acid",
@@ -210,13 +204,13 @@ NUTRIMENTS = [
         "name": "Fibre",
         "name_es": "Fibra",
         "key": "fibre",
-        "match": ["fibtg", "fibre", "fibra", "dietary fiber", "fibra dietetica", "fda", "roughage"]
+        "match": ["fibtg", "fibre", "fibra", "dietary fiber", "fibra dietetica", "roughage"]
     },
     {
         "name": "Magnesium",
         "name_es": "Magnesio",
         "key": "magnesium",
-        "match": ["magnessium", "magnesio", "mg"]
+        "match": ["magnessium", "magnesio"]
     },
     {
         "name": "Net Content",
@@ -228,7 +222,7 @@ NUTRIMENTS = [
         "name": "Iodide",
         "name_es": "Yoduro",
         "key": "iodide",
-        "match": ["id", "iodide", "yoduro"]
+        "match": ["iodide", "yoduro"]
     },
     {
         "name": "Serving Quantity Information",
@@ -260,7 +254,7 @@ NUTRIMENTS = [
         "name": "Protein",
         "name_es": "Proteína",
         "key": "protein",
-        "match": ["pro", "protein", "proteina"],
+        "match": ["protein", "proteina"],
         "description": "Proteína"
     },
     {
@@ -281,7 +275,7 @@ NUTRIMENTS = [
         "name": "Iron",
         "name_es": "Hierro",
         "key": "iron",
-        "match": ["hierro", "fe", "iron"],
+        "match": ["hierro", "iron"],
         "description": "Hierro"
     },
     {
@@ -302,15 +296,21 @@ NUTRIMENTS = [
         "name": "Phosphorus",
         "name_es": "Fósforo",
         "key": "phosphorus",
-        "match": ["phosphorus", "p", "fosforo"],
+        "match": ["phosphorus", "fosforo"],
         "description": "Fósforo"
     },
     {
         "name": "Copper",
         "name_es": "Cobre",
         "key": "copper",
-        "match": ["copper", "cu", "cobre"],
+        "match": ["copper", "cobre"],
         "description": "Cobre"
+    },
+    {
+        "name": "Sodium",
+        "name_es": "Sodio",
+        "key": "sodium",
+        "match": ["sodio", "sodium"],
     }
 ]
 
@@ -520,28 +520,25 @@ class Nutriments:
         if qty is not False:
             if isinstance(qty, str):
                 if unit is False:
-                    unit = self.get_unit(qty)
-                    if unit is not False:
-                        guess_dict['unit'] = unit
-
+                    unit, closer_unit = self.get_unit(qty)
                 qty = self.str_to_float(qty)
-                guess_dict['qty'] = qty if qty is not False else None
+                qty = qty if qty is not False else None
 
             elif isinstance(qty, float) or isinstance(qty, float):
-                guess_dict['qty'] = float(qty)
+                qty = float(qty)
 
         if daily is not False:
             if isinstance(daily, str):
                 daily = self.str_to_float(daily)
-                guess_dict['daily'] = daily if daily is not False else None
+                daily = daily if daily is not False else None
 
             elif isinstance(daily, float) or isinstance(daily, float):
-                guess_dict['daily'] = float(daily)
+                daily = float(daily)
 
         if unit is not False and isinstance(unit, str):
             unit, closer_unit = self.get_unit(unit, is_trusty=True)
             if unit is not False:
-                guess_dict['unit'] = unit
+                unit = unit
 
         if values and isinstance(values, str):
             values_txt = ''.join(
@@ -620,8 +617,10 @@ class Nutriments:
         text = re.sub(r'[\d%]', '', text)
         text = re.sub(r'\s+', ' ', text)
         if is_trusty:
-            trustier_text = re.search('[\d\.]+ *([\(\)a-z]+)')
+            print('Is trusty')
+            trustier_text = re.search('[\d\.]* *([\(\)a-z]+)', text)
             trustier_text = trustier_text.group(1) if trustier_text else False
+            print(trustier_text)
         else:
             trustier_text = False
         max_score = float('-inf')
@@ -630,10 +629,12 @@ class Nutriments:
         for unit in WEIGHT_UNITS:
             choices = unit.get("match")
             if trustier_text is not False:
-                result = process.extractOne(text, choices, scorer=fuzz.partial_token_set_ratio, score_cutoff=min_score)
-                if result:
-                    return unit.get('name_es') if self.langage == 'es' else unit.get('name')
-            result = process.extractOne(text, choices, scorer=fuzz.partial_token_set_ratio, score_cutoff=min_score)
+                result = process.extractOne(text, choices, scorer=fuzz.UWRatio, score_cutoff=min_score)
+                if result is not None:
+                    aux = unit.get('name_es') if self.langage == 'es' else unit.get('name')
+                    return aux, result[0]
+                continue
+            result = process.extractOne(text, choices, scorer=fuzz.token_set_ratio, score_cutoff=min_score)
             if result and result[1] >= max_score:
                 closer_unit = unit.get('name_es') if self.langage == 'es' else unit.get('name')
                 closer_match = result[0]
