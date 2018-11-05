@@ -5,7 +5,7 @@ from setuptools import find_packages
 setuptools.setup(
     name = 'ByHelpers',
     packages = ['ByHelpers'], # this must be the same as the name above
-    version = '0.0.1',
+    version = '0.0.2',
     description = 'Library used by ByPrice scrapers',
     author = 'Kevin B. Garcia Alonso',
     author_email = 'kevangy@hotmail.com',
@@ -14,7 +14,7 @@ setuptools.setup(
     keywords = ['ByPrice'],
     install_requires=[
         'pika==0.10.0',
-        'fuzzywuzzy'
+        'fuzzywuzzy==0.16.0'
     ],
     classifiers=(
         "Programming Language :: Python :: 3",
