@@ -10,7 +10,7 @@ setuptools.setup(
     author = 'Kevin B. Garcia Alonso',
     author_email = 'kevangy@hotmail.com',
     url = 'https://github.com/ByPrice/ByHelpers', # use the URL to the github repo
-    download_url = 'https://github.com/ByPrice/ByHelpers/tarball/0.0.1',
+    download_url = 'https://github.com/ByPrice/ByHelpers/tarball/0.0.2',
     keywords = ['ByPrice'],
     install_requires=[
         'pika==0.10.0',
