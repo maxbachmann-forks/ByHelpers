@@ -61,7 +61,7 @@ class RabbitEngine(object):
         self.USER = config['user'] if 'user' in config.keys() else os.getenv('STREAMER_USER','guest')
         self.PWD = config['password'] if 'password' in config.keys() else os.getenv('STREAMER_PASS','guest')
         self.HOST = config['host'] if 'host' in config.keys() else os.getenv('STREAMER_HOST','localhost')
-        self.VHOST = config['host'] if 'vhost' in config.keys() else os.getenv('STREAMER_VIRTUAL_HOST','%2F')
+        self.VHOST = config['host'] if 'vhost' in config.keys() else os.getenv('STREAMER_VIRTUAL_HOST','')
         self.PORT = config['port'] if 'port' in config.keys() else os.getenv('STREAMER_PORT','5672')
         self.CONN_ATTEMPTS = str(config['connection_attempts']) if 'connection_attempts' in config.keys() else '3'
         self.HEARTBEAT = config['heartbeat_interval'] if 'heartbeat_interval' in config.keys() else '0'
@@ -79,7 +79,7 @@ class RabbitEngine(object):
             self._connection = pika.BlockingConnection(
                 pika.ConnectionParameters(
                                         host=self.HOST,
-                                        port=self.PORT,
+                                        port=int(self.PORT),
                                         credentials=pika.credentials.PlainCredentials(self.USER, self.PWD),
                                         virtual_host=self.VHOST,
                                         heartbeat_interval=0
@@ -448,20 +448,109 @@ class RabbitEngine(object):
         self._connection.close()
 
 
-def stream_info(elem, param='id'):
-    try:
-        producer = RabbitEngine({
-            'queue': STREAMER_ROUTING_KEY,
-            'routing_key': STREAMER_ROUTING_KEY
+class Streamers(object):
+    stream_info = RabbitEngine({
+        'queue': STREAMER_ROUTING_KEY,
+        'routing_key': STREAMER_ROUTING_KEY
+    }, blocking=True)
+
+    stream_monitor = RabbitEngine({
+            'queue': SMONITOR_KEY,
+            'routing_key': SMONITOR_KEY
         }, blocking=True)
-        LOGGER.debug("Streaming [{}]".format(elem.get(param, '')))
-        producer.send(elem)
-        producer.close_channel()
-        producer.close_connection()
-        return True
-    except Exception as e:
-        LOGGER.error("Error while streaming: {}".format(e))
+
+    def __init__(self):
+        pass
+
+
+    @staticmethod
+    def send_stream_info(elem, param='id', first_attempt=True):
+
+        try:
+            LOGGER.debug("Streaming [{}]".format(elem.get(param, '')))
+            Streamers.stream_info.send(elem)
+            return True
+        except Exception as e:
+            LOGGER.error("Error while streaming: {}".format(e))
+        if first_attempt:
+            try:
+                if Streamers.stream_info:
+                    LOGGER.debug("Closing possible channel in stream_info")
+                    Streamers.stream_info.close_channel()
+                    LOGGER.debug("Closing possible connection in stream_info")
+                    Streamers.stream_info.close_connection()
+                else:
+                    raise Exception("stream_info does not exist anymore")
+            except Exception as e:
+                LOGGER.error("Error while closing stream_info: {}".format(e))
+
+            try:
+                Streamers.stream_info = RabbitEngine({
+                    'queue': STREAMER_ROUTING_KEY,
+                    'routing_key': STREAMER_ROUTING_KEY
+                }, blocking=True)
+                Streamers.send_stream_info(elem, param=param, first_attempt=False)
+            except Exception as e:
+                LOGGER.error("Error while reconnecting streamer_info: {}".format(e))
+                return False
         return False
+
+
+    @staticmethod
+    def send_stream_monitor(elem, param='id', first_attempt=True):
+        try:
+            LOGGER.debug("Streaming [{}]".format(elem.get(param, '')))
+            Streamers.stream_monitor.send(elem)
+            return True
+        except Exception as e:
+            LOGGER.error("Error while streaming: {}".format(e))
+
+        if first_attempt:
+            try:
+                if Streamers.stream_monitor:
+                    LOGGER.debug("Closing possible channel in stream_monitor")
+                    Streamers.stream_monitor.close_channel()
+                    LOGGER.debug("Closing possible connection in stream_monitor")
+                    Streamers.stream_monitor.close_connection()
+                else:
+                    raise Exception("stream_monitor does not exist anymore")
+            except Exception as e:
+                LOGGER.error("Error while closing stream_monitor: {}".format(e))
+
+            try:
+                Streamers.stream_monitor = RabbitEngine({
+                    'queue': SMONITOR_KEY,
+                    'routing_key': SMONITOR_KEY
+                }, blocking=True)
+                Streamers.send_stream_monitor(elem, param=param, first_attempt=False)
+            except Exception as e:
+                LOGGER.error("Error while reconnecting stream_monitor: {}".format(e))
+                return False
+        return False
+
+
+    @staticmethod
+    def close_stream_info():
+        Streamers.stream_info.close_channel()
+        Streamers.stream_info.close_connection()
+
+
+    @staticmethod
+    def close_stream_monitor():
+        Streamers.stream_monitor.close_channel()
+        Streamers.stream_monitor.close_connection()
+
+
+def stream_info(elem, param='id'):
+    Streamers.send_stream_info(elem, param)
+
+
+def close_stream_info():
+    Streamers.close_stream_info()
+
+
+def close_stream_monitor():
+    Streamers.close_stream_monitor()
 
 
 def stream_monitor(signal_type, **params):
@@ -546,6 +635,7 @@ def stream_monitor(signal_type, **params):
         return False
 
 
+
 def __sm(elem, param='signal'):
     """
     Stream the elem to smonitor queue RabbitMQ
@@ -553,19 +643,7 @@ def __sm(elem, param='signal'):
     :param param: str
     :return: Boolean
     """
-    try:
-        producer = RabbitEngine({
-            'queue': SMONITOR_KEY,
-            'routing_key': SMONITOR_KEY
-        }, blocking=True)
-        LOGGER.debug("sMonitor stream {}".format(elem.get(param, '')))
-        producer.send(elem)
-        producer.close_channel()
-        producer.close_connection()
-        return True
-    except Exception as e:
-        LOGGER.error("Error while streaming: {}".format(e))
-        return False
+    Streamers.send_stream_monitor(elem, param)
 
 
 class MonitorException(Exception):

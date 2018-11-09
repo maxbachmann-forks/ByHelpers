@@ -27,11 +27,10 @@ NUTRIMENTS = [
         "match": ["famscis", "monounsaturated fat", "grasas monoinsaturadas", "grasa monoinsaturada"]
     },
     {
-        "name": "Grasas Trans",
-        "name_es": "Trans Fat",
+        "name": "Trans Fat",
+        "name_es": "Grasas Trans",
         "key": "trans_fat",
-        "match": ["grasas trans", "trans fat", "acidos grasos trans", "trans fatty acids"],
-        "description": "Cobre"
+        "match": ["grasas trans", "trans fat", "acidos grasos trans", "trans fatty acids"]
     },
     {
         "name": "Total Fat",
@@ -62,8 +61,7 @@ NUTRIMENTS = [
         "name": "Potassium",
         "name_es": "Potasio",
         "key": "k",
-        "match": ["potassium", "potasio", "k"],
-        "description": "Potasio"
+        "match": ["potassium", "potasio", "k"]
     },
     {
         "name": "Vitamin E",
@@ -81,8 +79,7 @@ NUTRIMENTS = [
         "name": "Carnitine",
         "name_es": "Carnitina",
         "key": "carnitine",
-        "match": ["carnitine", "l carnitine", "carnitina"],
-        "description": "Carnitina"
+        "match": ["carnitine", "l carnitine", "carnitina"]
     },
     {
         "name": "Thiamin",
@@ -184,15 +181,13 @@ NUTRIMENTS = [
         "name": "Vitamin B2",
         "name_es": "Vitamina B2",
         "key": "vitb2",
-        "match": ["vitb2", "vitamina b2", "vitamin b2"],
-        "description": "Vitamina B2"
+        "match": ["vitb2", "vitamina b2", "vitamin b2"]
     },
     {
         "name": "Vitamin B6",
         "name_es":"Vitamina B6",
         "key": "vitb6",
-        "match": ["vitb6", "vitb6", "vitamina b6", "vitamin b6"],
-        "description": "Vitamina B6"
+        "match": ["vitb6", "vitb6", "vitamina b6", "vitamin b6"]
     },
     {
         "name": "Vitamin K",
@@ -247,70 +242,61 @@ NUTRIMENTS = [
         "name": "Saturated Fat",
         "name_es": "Grasas Saturadas",
         "key": "sat_fat",
-        "match": ["fasat", "saturated fat", "grasas saturadas", "grasa saturada"],
-        "description": "Grasas Saturadas"
+        "match": ["fasat", "saturated fat", "grasas saturadas", "grasa saturada"]
     },
     {
         "name": "Protein",
         "name_es": "Proteína",
         "key": "protein",
-        "match": ["protein", "proteina"],
-        "description": "Proteína"
+        "match": ["protein", "proteina"]
     },
     {
         "name": "Galactose",
         "name_es": "Galactosa",
         "key": "galactose",
-        "match": ["galactose", "galactosa"],
-        "description": "Galactosa"
+        "match": ["galactose", "galactosa"]
     },
     {
         "name": "Bicarbonate",
         "name_es": "Bicarbonato",
         "key": "bicarbonate",
-        "match": ["bicarbonate", "bicarbonato", "g hc"],
-        "description": "Bicarbonato"
+        "match": ["bicarbonate", "bicarbonato", "g hc"]
     },
     {
         "name": "Iron",
         "name_es": "Hierro",
         "key": "iron",
-        "match": ["hierro", "iron"],
-        "description": "Hierro"
+        "match": ["hierro", "iron"]
     },
     {
         "name": "Biotin",
         "name_es": "Biotina",
         "key": "biotin",
-        "match": ["biotin", "biot", "biotina"],
-        "description": "Biotina"
+        "match": ["biotin", "biot", "biotina"]
     },
     {
         "name": "Oleic Acid",
         "name_es": "Ácido Oleico",
         "key": "oleic_acid",
-        "match": ["oleic acid", "omega 9", "acido oleico", "acid oleico", "acido oleic", "oleic acido"],
-        "description": "Ácido Oleico"
+        "match": ["oleic acid", "omega 9", "acido oleico", "acid oleico", "acido oleic", "oleic acido"]
     },
     {
         "name": "Phosphorus",
         "name_es": "Fósforo",
         "key": "phosphorus",
-        "match": ["phosphorus", "fosforo"],
-        "description": "Fósforo"
+        "match": ["phosphorus", "fosforo"]
     },
     {
         "name": "Copper",
         "name_es": "Cobre",
         "key": "copper",
-        "match": ["copper", "cobre"],
-        "description": "Cobre"
+        "match": ["copper", "cobre"]
     },
     {
         "name": "Sodium",
         "name_es": "Sodio",
         "key": "sodium",
-        "match": ["sodio", "sodium"],
+        "match": ["sodio", "sodium"]
     }
 ]
 
