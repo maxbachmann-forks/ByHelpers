@@ -565,7 +565,7 @@ class Attributes:
                             if value:
                                 self.guess_attr(value)
                 else:
-                    print("{} type is not supported ({})".format(str(args[0]), type(args[0])))
+                    print("ERROR adding attribute: {} type is not supported ({})".format(str(args[0]), type(args[0])))
                     return False
         elif kargs:
             name = kargs.get('name', 'raw')
@@ -578,7 +578,6 @@ class Attributes:
             attributes = [('value', str), ('unit', str), ('qty', float), ('order', str)]
             attr = ATTRIBUTES_FIXED.get(name, {})
             if len(attr) == 0:
-                print('IS RAW!!!!!')
                 is_raw = True
 
             attr_dict = {
@@ -620,7 +619,7 @@ class Attributes:
 
             self.update_attr(attr_dict, is_raw)
         else:
-            print("You should pass at least 1 paramenter")
+            print("ERROR adding attribute: You should pass at least 1 paramenter")
 
     def update_attr(self, parsed_attr, is_raw=True):
         if is_raw is True:

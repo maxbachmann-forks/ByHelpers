@@ -413,7 +413,7 @@ class Nutriments:
                             if value:
                                 self.guess_nutr(value)
                 else:
-                    print("{} type is not supported ({})".format(str(args[0]), type(args[0])))
+                    print("ERROR adding nutrition fact: {} type is not supported ({})".format(str(args[0]), type(args[0])))
                     return False
         elif kargs:
             name = kargs.get('name', 'raw')
@@ -446,7 +446,7 @@ class Nutriments:
 
             self.update_nutr(nutr_dict, is_raw)
         else:
-            print("You should pass at least 1 paramenter")
+            print("ERROR adding nutrition fact: You should pass at least 1 paramenter")
 
 
     def update_nutr(self, parsed_nutr, is_raw=True):
@@ -603,10 +603,8 @@ class Nutriments:
         text = re.sub(r'[\d%]', '', text)
         text = re.sub(r'\s+', ' ', text)
         if is_trusty:
-            print('Is trusty')
             trustier_text = re.search('[\d\.]* *([\(\)a-z]+)', text)
             trustier_text = trustier_text.group(1) if trustier_text else False
-            print(trustier_text)
         else:
             trustier_text = False
         max_score = float('-inf')
