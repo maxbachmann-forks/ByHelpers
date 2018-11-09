@@ -542,7 +542,7 @@ class Streamers(object):
 
 
 def stream_info(elem, param='id'):
-    Streamers.send_stream_info(elem, param)
+    return Streamers.send_stream_info(elem, param)
 
 
 def close_stream_info():
@@ -643,7 +643,7 @@ def __sm(elem, param='signal'):
     :param param: str
     :return: Boolean
     """
-    Streamers.send_stream_monitor(elem, param)
+    return Streamers.send_stream_monitor(elem, param)
 
 
 class MonitorException(Exception):
