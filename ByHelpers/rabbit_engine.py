@@ -61,6 +61,7 @@ class RabbitEngine(object):
         self.USER = config['user'] if 'user' in config.keys() else os.getenv('STREAMER_USER','guest')
         self.PWD = config['password'] if 'password' in config.keys() else os.getenv('STREAMER_PASS','guest')
         self.HOST = config['host'] if 'host' in config.keys() else os.getenv('STREAMER_HOST','localhost')
+        self.VHOST = config['host'] if 'vhost' in config.keys() else os.getenv('STREAMER_VIRTUAL_HOST','%2F')
         self.PORT = config['port'] if 'port' in config.keys() else os.getenv('STREAMER_PORT','5672')
         self.CONN_ATTEMPTS = str(config['connection_attempts']) if 'connection_attempts' in config.keys() else '3'
         self.HEARTBEAT = config['heartbeat_interval'] if 'heartbeat_interval' in config.keys() else '0'
@@ -72,10 +73,18 @@ class RabbitEngine(object):
 
         if not blocking:
             self._url = 'amqp://%s:%s@%s:%s/%s?connection_attempts=%s&heartbeat_interval=%s' % \
-                         (self.USER,self.PWD,self.HOST,self.PORT,'%2F',self.CONN_ATTEMPTS,self.HEARTBEAT)
+                         (self.USER,self.PWD,self.HOST,self.PORT, self.VHOST,self.CONN_ATTEMPTS,self.HEARTBEAT)
             self._connection = self.connect()
         else:
-            self._connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.HOST,heartbeat_interval=0))
+            self._connection = pika.BlockingConnection(
+                pika.ConnectionParameters(
+                                        host=self.HOST,
+                                        port=self.PORT,
+                                        credentials=pika.credentials.PlainCredentials(self.USER, self.PWD),
+                                        virtual_host=self.VHOST,
+                                        heartbeat_interval=0
+                                        )
+                                    )
             self._channel = self._connection.channel()
             self._channel.exchange_declare(exchange=self.EXCHANGE,type=self.EXCHANGE_TYPE)
             self._channel.queue_declare(queue=self.QUEUE)
