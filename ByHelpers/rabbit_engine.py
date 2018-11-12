@@ -635,7 +635,6 @@ def stream_monitor(signal_type, **params):
         return False
 
 
-
 def __sm(elem, param='signal'):
     """
     Stream the elem to smonitor queue RabbitMQ
