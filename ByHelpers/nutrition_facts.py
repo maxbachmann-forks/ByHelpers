@@ -458,17 +458,13 @@ class Nutriments:
         if is_raw is True:
             nutr = self.raw_nutriments.get(key, False)
             if nutr is False:
-                self.raw_nutriments[key] = parsed_nutr
-            elif isinstance(nutr, dict):
-                self.raw_nutriments[key] = [nutr, parsed_nutr]
+                self.raw_nutriments[key] = [parsed_nutr]
             elif isinstance(nutr, list):
                 self.raw_nutriments[key].append(parsed_nutr)
         else:
             nutr = self.nutriments.get(key, False)
             if nutr is False:
-                self.nutriments[key] = parsed_nutr
-            elif isinstance(nutr, dict):
-                self.nutriments[key] = [nutr, parsed_nutr]
+                self.nutriments[key] = [parsed_nutr]
             elif isinstance(nutr, list):
                 self.nutriments[key].append(parsed_nutr)
         self.nutriment = None

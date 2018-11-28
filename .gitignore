@@ -2,3 +2,5 @@ build/
 dist/
 ByHelpers.egg-info/
 env/
+*.pyc
+*.local

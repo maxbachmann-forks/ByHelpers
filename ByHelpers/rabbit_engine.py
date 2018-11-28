@@ -61,7 +61,7 @@ class RabbitEngine(object):
         self.USER = config['user'] if 'user' in config.keys() else os.getenv('STREAMER_USER','guest')
         self.PWD = config['password'] if 'password' in config.keys() else os.getenv('STREAMER_PASS','guest')
         self.HOST = config['host'] if 'host' in config.keys() else os.getenv('STREAMER_HOST','localhost')
-        self.VHOST = config['host'] if 'vhost' in config.keys() else os.getenv('STREAMER_VIRTUAL_HOST','')
+        self.VHOST = config['vhost'] if 'vhost' in config.keys() else os.getenv('STREAMER_VIRTUAL_HOST','')
         self.PORT = config['port'] if 'port' in config.keys() else os.getenv('STREAMER_PORT','5672')
         self.CONN_ATTEMPTS = str(config['connection_attempts']) if 'connection_attempts' in config.keys() else '3'
         self.HEARTBEAT = config['heartbeat_interval'] if 'heartbeat_interval' in config.keys() else '0'

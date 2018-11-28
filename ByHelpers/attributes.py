@@ -6,24 +6,18 @@ from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 import re
 
-
 ATTRIBUTES = [
     {
         "key": "presentation",
         "match": ["presentation", "presentacion"],
-
     },
     {
-
-        "key": "measure_units",
+        "key": "measure_unit",
         "match": ["units", "measure", "measurement", "medida", "unidades"],
-
     },
     {
-
         "key": "size",
         "match": ["size", "talla", "tamano", 'siz'],
-
     },
     {
         "key": "material",
@@ -95,9 +89,34 @@ ATTRIBUTES_FIXED = {
     "presentation": {
         "value": [
             {
-                "match" : ["dose","dosis","e27"],
+                "match": ["taza", "copa", "cup"],
+                "name": "cup",
+                "name_es": "taza"
+            },
+            {
+                "match": ["packs", "unidades", "cnt", "count", "units", "ct"],
+                "name": "units",
+                "name_es": "unidades"
+            },
+            {
+                "match": ["dose","dosis"],
                 "name": 'dose',
                 "name_es": "dosis"
+            },
+            {
+                "match": ["canister", "frasco"],
+                "name": "canister",
+                "name_es": "frasco"
+            },
+            {
+                "match": ["lata", "can"],
+                "name": "can",
+                "name_es": "lata"
+            },
+            {
+                "match" : ["caja", "box", "boxes"],
+                "name": "box",
+                "name_es": "caja"
             },
             {
                 "name" : "tablet",
@@ -121,8 +140,8 @@ ATTRIBUTES_FIXED = {
             },
             {
                 "name" : "kit",
-                "name_es" : "kit",
-                "match" : ["set", "sets", "kt", "kit", "kits", "pack", "paquete", "combo"]
+                "name_es" : "paquete",
+                "match" : ["set", "kt", "kit", "pack", "paquete", "combo"]
             },
             {
                 "name" : "ointment",
@@ -161,13 +180,23 @@ ATTRIBUTES_FIXED = {
             },
             {
                 "name" : "tube",
-                "name" : "name_es",
+                "name_es" : "tubo",
                 "match" : ["tubo","tub","tube"]
             },
             {
                 "name" : "ampoule",
                 "name_es" : "ampolletas",
                 "match" : ["ampolletas","ampoules","ampolleta"]
+            },
+            {
+                "match": ["botella", "bottle"],
+                "name": "bottle",
+                "name_es": "botella"
+            },
+            {
+                "match": ["bolsa", "bag"],
+                "name": "bag",
+                "name_es": "bolsa"
             }
         ],
         "fixed": [('value', str)],
@@ -576,6 +605,7 @@ class Attributes:
             else:
                 is_raw = True
             attributes = [('value', str), ('unit', str), ('qty', float), ('order', str)]
+
             attr = ATTRIBUTES_FIXED.get(name, {})
             if len(attr) == 0:
                 is_raw = True
@@ -626,18 +656,14 @@ class Attributes:
             key = parsed_attr.get('key', 'raw')
             attr = self.raw_attributes.get(key, False)
             if attr is False:
-                self.raw_attributes[key] = parsed_attr
-            elif isinstance(attr, dict):
-                self.raw_attributes[key] = [attr, parsed_attr]
+                self.raw_attributes[key] = [parsed_attr]
             elif isinstance(attr, list):
                 self.raw_attributes[key].append(parsed_attr)
         else:
             key = parsed_attr.get('key', 'raw')
             attr = self.attributes.get(key, False)
             if attr is False:
-                self.attributes[key] = parsed_attr
-            elif isinstance(attr, dict):
-                self.attributes[key] = [attr, parsed_attr]
+                self.attributes[key] = [parsed_attr]
             elif isinstance(attr, list):
                 self.attributes[key].append(parsed_attr)
 
@@ -668,7 +694,7 @@ class Attributes:
                 text = ''.join(x for x in unicodedata.normalize('NFKD', value) if x in string.ascii_letters or x in [" ", '"', "'", '.', ',']).lower()
                 text.strip()
                 text = re.sub(r'\s+', ' ', text)
-                result = process.extractOne(text, choices, scorer=fuzz.partial_token_set_ratio, score_cutoff=min_score)
+                result = process.extractOne(text, choices, scorer=fuzz.UWRatio, score_cutoff=min_score)
                 if result and result[1] > min_score:
                     return True
                 else:
