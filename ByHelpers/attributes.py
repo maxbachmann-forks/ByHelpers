@@ -630,22 +630,21 @@ class Attributes:
                         result = kargs.get(attribute)
                         is_raw = True
                 elif attribute in must.keys() and kargs.get(attribute, False) is not False:
-                    result = self.check_attr(kargs.get(attribute), expected_type=must.get(attribute))
+                    can_be_numeric = attr_dict['key'] in ['brand', 'provider', 'laboratory', 'model']
+                    result = self.check_attr(kargs.get(attribute), expected_type=must.get(attribute), can_be_numeric=can_be_numeric)
                     if result is None:
                         result = kargs.get(attribute)
                         is_raw = True
                 else:
-                    result = self.check_attr(kargs.get(attribute), expected_type=default_type)
-                    if result is None:
-                        result = kargs.get(attribute)
+                    result = None
+                    # result = self.check_attr(kargs.get(attribute), expected_type=default_type)
+                    # if result is None:
+                    #     result = kargs.get(attribute)
 
                 attr_dict[attribute] = result
 
             if kargs.get('is_raw', False) is True:
                 is_raw = True
-
-
-
 
             self.update_attr(attr_dict, is_raw)
         else:
@@ -670,7 +669,7 @@ class Attributes:
     @staticmethod
     def get_name(text, min_score=80, trusty_score=90):
         text = ''.join(x for x in unicodedata.normalize('NFKD', text) if x in string.ascii_letters or x in [" ", '"', "'", '.', ',']).lower()
-        text.strip()
+        text = text.strip()
         text = re.sub(r'\s+', ' ', text)
         max_score = float('-inf')
         closer_attr = False
@@ -692,7 +691,7 @@ class Attributes:
         if isinstance(value, str):
             if expected_type is str:
                 text = ''.join(x for x in unicodedata.normalize('NFKD', value) if x in string.ascii_letters or x in [" ", '"', "'", '.', ',']).lower()
-                text.strip()
+                text = text.strip()
                 text = re.sub(r'\s+', ' ', text)
                 result = process.extractOne(text, choices, scorer=fuzz.UWRatio, score_cutoff=min_score)
                 if result and result[1] > min_score:
@@ -714,11 +713,18 @@ class Attributes:
             return False
 
     @staticmethod
-    def check_attr(value, expected_type=str):
+    def check_attr(value, expected_type=str, can_be_numeric=False):
         if isinstance(value, str):
             if expected_type is str:
-                text = ''.join(x for x in unicodedata.normalize('NFKD', value) if
-                               x in string.ascii_letters or x in [" ", '"', "'", '.', ',']).lower()
+                if can_be_numeric == False:
+                    text = ''.join(x for x in unicodedata.normalize('NFKD', value) if
+                                   x in string.ascii_letters or x in [" ", '"', "'", '.', ',']).lower()
+                else:
+                    text = ''.join(x for x in unicodedata.normalize('NFKD', value) if
+                                    x in string.ascii_letters
+                                    or x in [" ", '"', "'", '.', ',']
+                                    or x in string.digits
+                                ).lower()
                 text.strip()
                 text = re.sub(r'\s+', ' ', text)
                 text = text.strip()
