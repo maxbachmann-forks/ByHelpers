@@ -104,6 +104,24 @@ class RabbitEngine(object):
         return pika.SelectConnection(pika.URLParameters(self._url),
                                      self.on_connection_open,
                                      stop_ioloop_on_close=False)
+    
+    def on_blocked_connection_closed(self):
+        """ Method to apply reconnection when a Blocking connection 
+            has been lost, it applies the same reconnection code.
+        """
+        if self._connection.is_closed:
+            self._connection = pika.BlockingConnection(
+                    pika.ConnectionParameters(
+                                            host=self.HOST,
+                                            port=int(self.PORT),
+                                            credentials=pika.credentials.PlainCredentials(self.USER, self.PWD),
+                                            virtual_host=self.VHOST,
+                                            heartbeat_interval=0
+                                            )
+                                        )
+            self._channel = self._connection.channel()
+            self._channel.exchange_declare(exchange=self.EXCHANGE,type=self.EXCHANGE_TYPE)
+            self._channel.queue_declare(queue=self.QUEUE)
 
     def on_connection_open(self, unused_connection):
         """This method is called by pika once the connection to RabbitMQ has
@@ -335,6 +353,8 @@ class RabbitEngine(object):
         if self._stopping:
             return
         properties = pika.BasicProperties(app_id="byprice",content_type='application/json', delivery_mode=2)
+        # Add reconnection when is disconnected
+        self.on_blocked_connection_closed()
         self._channel.basic_publish(exchange=self.EXCHANGE,
                                     routing_key=self.ROUTING_KEY,
                                     body=json.dumps(message, ensure_ascii=False),
