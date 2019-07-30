@@ -13,29 +13,40 @@ LOG_PORT = os.getenv('LOG_PORT', 27971)
 ENV = os.getenv('ENV', 'LOCAL')
 
 # Instantiates a client
-client = google.cloud.logging.Client()
+client = None
+try:
+    client = google.cloud.logging.Client()
+    # # Connects the logger to the root logging handler with log level debug or higher
+    # client.setup_logging(log_level=getattr(logging,LOG_LEVEL))
+except Exception:
+    logging.info('Not GCP credentials')
 
-# Connects the logger to the root logging handler with log level debug or higher
-client.setup_logging(log_level=getattr(logging,LOG_LEVEL))
 
 def create_logger(name=APP_NAME):
     ''' Create logger and add handlers and filters
     '''
     global logger
+    logger = logging.getLogger(name)
+
     log_format = '%(service)s %(hostname)s: [%(env)s] %(message)s '
     log_formatter = logging.Formatter(log_format,datefmt='%b %d %H:%M:%S')
     log_filter = ContextFilter()
     remote_handler = SysLogHandler(address=(LOG_HOST, int(LOG_PORT)))
     remote_handler.setFormatter(log_formatter)
+
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(log_formatter)
-    hdlr = client.get_default_handler()
-    hdlr.setFormatter(log_formatter)    
 
-    logger = logging.getLogger(name)
-    logger.setLevel(getattr(logging,LOG_LEVEL))
+    if client is not None:
+        hdlr = client.get_default_handler()
+        # google.cloud.logging.handlers.setup_logging(hdlr)
+        logger.addHandler(hdlr)
+        logger.addHandler(logging.StreamHandler())
+    
+    logger.setLevel(LOG_LEVEL)
     logger.addFilter(log_filter)
-    logger.addHandler(hdlr)
+
+    
     logger.addHandler(console_handler)
     logger.addHandler(remote_handler)
 
