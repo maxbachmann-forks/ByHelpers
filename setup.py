@@ -5,7 +5,7 @@ from setuptools import find_packages
 setuptools.setup(
     name = 'ByHelpers',
     packages = ['ByHelpers'], # this must be the same as the name above
-    version = '0.1.3',
+    version = '0.1.4',
     description = 'Library used by ByPrice scrapers',
     author = 'Kevin B. Garcia Alonso',
     author_email = 'kevangy@hotmail.com',
