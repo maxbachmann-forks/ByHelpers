@@ -4,4 +4,6 @@ ByHelpers.egg-info/
 env/
 *.pyc
 *.local
-**/.envvars*
+**/.env*
+.vscode*
+*.env*

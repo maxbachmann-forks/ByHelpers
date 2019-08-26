@@ -99,7 +99,7 @@ class RabbitEngine(object):
                                         heartbeat_interval=0
                                         )
                                     )
-            self._channel = self.connection.channel()
+            self._channel = self._connection.channel()
             self._channel.exchange_declare(exchange=self.EXCHANGE,type=self.EXCHANGE_TYPE)
             self._channel.queue_declare(queue=self.QUEUE)
             if self._purge:
@@ -121,7 +121,7 @@ class RabbitEngine(object):
 
         """
         LOGGER.debug('Adding connection close callback')
-        self.connection.add_on_close_callback(self.on_connection_closed)
+        self._connection.add_on_close_callback(self.on_connection_closed)
 
     def on_connection_closed(self, connection, reply_code, reply_text):
         """This method is invoked by pika when the connection to RabbitMQ is
@@ -135,11 +135,11 @@ class RabbitEngine(object):
         """
         self._channel = None
         if self._closing:
-            self.connection.ioloop.stop()
+            self._connection.ioloop.stop()
         else:
             LOGGER.debug('Connection closed, reopening in 5 seconds: (%s) %s',
                            reply_code, reply_text)
-            self.connection.add_timeout(5, self.reconnect)
+            self._connection.add_timeout(5, self.reconnect)
 
     def reconnect(self):
         """Will be invoked by the IOLoop timer if the connection is
@@ -147,7 +147,7 @@ class RabbitEngine(object):
 
         """
         # This is the old connection IOLoop instance, stop its ioloop
-        self.connection.ioloop.stop()
+        self._connection.ioloop.stop()
 
         if not self._closing:
 
@@ -155,7 +155,7 @@ class RabbitEngine(object):
             self.connect()
 
             # There is now a new connection, needs a new ioloop to run
-            self.connection.ioloop.start()
+            self._connection.ioloop.start()
 
     def open_channel(self):
         """Open a new channel with RabbitMQ by issuing the Channel.Open RPC
@@ -164,7 +164,7 @@ class RabbitEngine(object):
 
         """
         LOGGER.debug('Creating a new channel')
-        self.connection.channel(on_open_callback=self.on_channel_open)
+        self._connection.channel(on_open_callback=self.on_channel_open)
 
     def on_channel_open(self, channel):
         """This method is invoked by pika when the channel has been opened.
@@ -179,6 +179,24 @@ class RabbitEngine(object):
         self._channel = channel
         self.add_on_channel_close_callback()
         self.setup_exchange(self.EXCHANGE)
+    
+    def on_blocked_connection_closed(self):	
+        """ Method to apply reconnection when a Blocking connection 	
+            has been lost, it applies the same reconnection code.	
+        """	
+        if self._connection.is_closed:	
+            self._connection = pika.BlockingConnection(	
+                    pika.ConnectionParameters(	
+                                            host=self.HOST,	
+                                            port=int(self.PORT),	
+                                            credentials=pika.credentials.PlainCredentials(self.USER, self.PWD),	
+                                            virtual_host=self.VHOST,	
+                                            heartbeat_interval=0	
+                                            )	
+                                        )	
+            self._channel = self._connection.channel()	
+            self._channel.exchange_declare(exchange=self.EXCHANGE,type=self.EXCHANGE_TYPE)	
+            self._channel.queue_declare(queue=self.QUEUE)
 
     def add_on_channel_close_callback(self):
         """This method tells pika to call the on_channel_closed method if
@@ -202,7 +220,7 @@ class RabbitEngine(object):
         """
         LOGGER.debug('Channel %i was closed: (%s) %s',
                        channel, reply_code, reply_text)
-        self.connection.close()
+        self._connection.close()
 
     def setup_exchange(self, exchange_name):
         """Setup the exchange on RabbitMQ by invoking the Exchange.Declare RPC
@@ -336,8 +354,7 @@ class RabbitEngine(object):
             return
         properties = pika.BasicProperties(app_id="byprice",content_type='application/json', delivery_mode=2)
         # Add reconnection when is disconnected
-        if self.connection.is_closed:
-            self.connect()
+        self.on_blocked_connection_closed()
         self._channel.basic_publish(exchange=self.EXCHANGE,
                                     routing_key=self.ROUTING_KEY,
                                     body=json.dumps(message, ensure_ascii=False),
@@ -442,13 +459,13 @@ class RabbitEngine(object):
         LOGGER.debug('Stopping')
         self._closing = True
         self.stop_consuming()
-        self.connection.ioloop.start()
+        self._connection.ioloop.start()
         LOGGER.debug('Stopped')
 
     def close_connection(self):
         """This method closes the connection to RabbitMQ."""
         LOGGER.debug('Closing connection')
-        self.connection.close()
+        self._connection.close()
 
     @property
     def connection(self):
