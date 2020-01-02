@@ -71,6 +71,9 @@ class RabbitEngine(object):
         self.EXCHANGE_TYPE = config['exchange_type'] if 'exchange_type' in config.keys() else os.getenv('STREAMER_EXCHANGE_TYPE','direct')
         self.ROUTING_KEY = config['routing_key'] if 'routing_key' in config.keys() else os.getenv('STREAMER_ROUTING_KEY','')
         self.QUEUE = config['queue'] if 'queue' in config.keys() else os.getenv('STREAMER_QUEUE','')
+
+        self._prefetch = config.get('prefetch', None)
+
         if blocking:
             self._connection = pika.BlockingConnection(
                 pika.ConnectionParameters(
@@ -84,6 +87,8 @@ class RabbitEngine(object):
             self._channel = self._connection.channel()
             self._channel.exchange_declare(exchange=self.EXCHANGE,type=self.EXCHANGE_TYPE)
             self._channel.queue_declare(queue=self.QUEUE)
+            if self._prefetch:
+                self._channel.basic_qos(prefetch_count=int(self._prefetch), global_qos=False)                
             if self._purge:
                 self._channel.queue_purge(queue=self.QUEUE)
 
@@ -122,6 +127,8 @@ class RabbitEngine(object):
             self._channel = self._connection.channel()
             self._channel.exchange_declare(exchange=self.EXCHANGE,type=self.EXCHANGE_TYPE)
             self._channel.queue_declare(queue=self.QUEUE)
+            if self._prefetch:
+                self._channel.basic_qos(prefetch_count=int(self._prefetch), global_qos=False)  
             
 
     def on_connection_open(self, unused_connection):
@@ -216,6 +223,8 @@ class RabbitEngine(object):
             self._channel = self._connection.channel()	
             self._channel.exchange_declare(exchange=self.EXCHANGE,type=self.EXCHANGE_TYPE)	
             self._channel.queue_declare(queue=self.QUEUE)
+            if self._prefetch:
+                self._channel.basic_qos(prefetch_count=int(self._prefetch), global_qos=False)  
 
     def add_on_channel_close_callback(self):
         """This method tells pika to call the on_channel_closed method if
