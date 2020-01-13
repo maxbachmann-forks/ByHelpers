@@ -11,3 +11,4 @@ Pipfile
 Pipfile.lock
 *.log
 logs
+.idea
