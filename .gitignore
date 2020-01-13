@@ -7,3 +7,7 @@ env/
 **/.env*
 .vscode*
 *.env*
+Pipfile
+Pipfile.lock
+*.log
+logs
