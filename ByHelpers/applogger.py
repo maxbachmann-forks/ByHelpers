@@ -4,11 +4,15 @@ import os
 
 logger = None
 APP_NAME = os.getenv('APP_NAME', 'applogger')
-LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
 ENVIRONMENT = os.getenv('ENV', 'LOCAL')
 REGION = os.getenv('REGION', 'MEX')
-ACTIVE_LOG_HANDLERS = os.getenv('ACTIVE_LOG_HANDLERS',
-                                ['console', 'info_file_handler', 'error_file_handler', 'fluent_async_handler'])
+TARGET = os.getenv('TARGET')
+
+LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
+LOG_INFO_FILE = os.getenv('LOG_INFO_FILE')
+LOG_ERROR_FILE = os.getenv('LOG_ERROR_FILE')
+LOG_HANDLERS = os.getenv('LOG_HANDLERS', ['console', 'info_file_handler', 'error_file_handler', 'fluent_async_handler'])
+
 
 app_logging_config = {
     'version': 1,
@@ -80,7 +84,7 @@ def create_logger(name=APP_NAME):
     global logger
 
     log_level = LOG_LEVEL
-    app_logging_config['loggers']['']['handlers'] = list(ACTIVE_LOG_HANDLERS)
+    app_logging_config['loggers']['']['handlers'] = list(LOG_HANDLERS)
 
     if log_level is not None and log_level in ['NOTSET', 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']:
         print('Changing LOG_LEVEL={} for console, info_file_handler and fluent_async_handler'.format(log_level))
@@ -88,16 +92,20 @@ def create_logger(name=APP_NAME):
         app_logging_config['handlers']['info_file_handler']['level'] = log_level
         app_logging_config['handlers']['fluent_async_handler']['level'] = log_level
 
-    log_info_file = os.environ.get('LOG_INFO_FILE')
+    log_info_file = LOG_INFO_FILE
     if log_info_file is None or log_info_file == '':
         log_info_file = os.path.join(os.getcwd(), 'logs', APP_NAME + '_info.log')
-        print('LOG_INFO_FILE={}'.format(log_info_file))
+    if TARGET is not None:
+        log_info_file = log_info_file.replace('.log', '_' + TARGET + '.log')
+    print('LOG_INFO_FILE={}'.format(log_info_file))
     app_logging_config['handlers']['info_file_handler']['filename'] = log_info_file
 
-    log_error_file = os.environ.get('LOG_ERROR_FILE')
+    log_error_file = LOG_ERROR_FILE
     if log_error_file is None or log_error_file == '':
         log_error_file = os.path.join(os.getcwd(), 'logs', APP_NAME + '_error.log')
-        print('ERROR_INFO_FILE={}'.format(log_error_file))
+    if TARGET is not None:
+        log_error_file = log_error_file.replace('.log', '_' + TARGET + '.log')
+    print('ERROR_INFO_FILE={}'.format(log_error_file))
     app_logging_config['handlers']['error_file_handler']['filename'] = log_error_file
 
     app_logging_config['handlers']['fluent_async_handler']['tag'] = APP_NAME + '.' + ENVIRONMENT + '.' + REGION
