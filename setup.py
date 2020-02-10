@@ -4,7 +4,7 @@ from setuptools import find_packages
 setuptools.setup(
     name='ByHelpers',
     packages=['ByHelpers'],  # this must be the same as the name above
-    version='1.0',
+    version='1.0.1',
     description='Library used by ByPrice',
     author='Kevin B. Garcia Alonso',
     author_email='kevangy@hotmail.com',
