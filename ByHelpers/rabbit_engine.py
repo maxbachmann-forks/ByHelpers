@@ -103,8 +103,8 @@ class RabbitEngine(object):
                                         )
                                     )
             self._channel = self._connection.channel()
-            self._channel.exchange_declare(exchange=self.EXCHANGE,exchange_type=self.EXCHANGE_TYPE)
-            self._channel.queue_declare(queue=self.QUEUE)
+            self._channel.exchange_declare(exchange=self.EXCHANGE,exchange_type=self.EXCHANGE_TYPE, durable=True)
+            self._channel.queue_declare(queue=self.QUEUE, durable=True)
             if self._purge:
                 self._channel.queue_purge(queue=self.QUEUE)
 
