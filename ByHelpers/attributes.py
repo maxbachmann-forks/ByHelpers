@@ -2,8 +2,8 @@
 
 import unicodedata
 import string
-from fuzzywuzzy import fuzz
-from fuzzywuzzy import process
+from rapidfuzz import fuzz
+from rapidfuzz import process
 import re
 
 ATTRIBUTES = [
@@ -693,7 +693,7 @@ class Attributes:
                 text = ''.join(x for x in unicodedata.normalize('NFKD', value) if x in string.ascii_letters or x in [" ", '"', "'", '.', ',']).lower()
                 text = text.strip()
                 text = re.sub(r'\s+', ' ', text)
-                result = process.extractOne(text, choices, scorer=fuzz.UWRatio, score_cutoff=min_score)
+                result = process.extractOne(text, choices, scorer=fuzz.WRatio, score_cutoff=min_score)
                 if result and result[1] > min_score:
                     return True
                 else:

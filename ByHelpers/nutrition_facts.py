@@ -2,8 +2,8 @@
 
 import unicodedata
 import string
-from fuzzywuzzy import fuzz
-from fuzzywuzzy import process
+from rapidfuzz import fuzz
+from rapidfuzz import process
 import re
 
 
@@ -609,7 +609,7 @@ class Nutriments:
         for unit in WEIGHT_UNITS:
             choices = unit.get("match")
             if trustier_text is not False:
-                result = process.extractOne(text, choices, scorer=fuzz.UWRatio, score_cutoff=min_score)
+                result = process.extractOne(text, choices, scorer=fuzz.WRatio, score_cutoff=min_score)
                 if result is not None:
                     aux = unit.get('name_es') if self.langage == 'es' else unit.get('name')
                     return aux, result[0]

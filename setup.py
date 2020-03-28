@@ -13,7 +13,7 @@ setuptools.setup(
     keywords=['ByPrice'],
     install_requires=[
         'pika==0.11.0',
-        'fuzzywuzzy==0.16.0',
+        'rapidfuzz==0.3.0',
         'fluent-logger==0.9.4'
     ],
     classifiers=(
